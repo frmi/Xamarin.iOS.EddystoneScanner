@@ -26,11 +26,13 @@ namespace Xamarin.iOS.EddystoneScanner
 
             public BeaconType Type { get; private set; }
             public byte[] Id { get; private set; }
+            public string Base64Representation { get; private set; }
 
             public BeaconId(BeaconType beaconType, byte[] beaconId)
             {
                 this.Type = beaconType;
                 this.Id = beaconId;
+                this.Base64Representation = Convert.ToBase64String(beaconId);
             }
 
             public override string ToString()
@@ -125,7 +127,7 @@ namespace Xamarin.iOS.EddystoneScanner
                     case BeaconType.Eddystone:
                         return $"Eddystone {BeaconId}, txPower: {TxPower}, RSSI: {RSSI}";
                     case BeaconType.EddystoneEID:
-                        return $"Eddystone EID {BeaconId}, base64: {System.Convert.ToBase64String(BeaconId.Id)}, txPower: {TxPower}, RSSI: {RSSI}";
+                        return $"Eddystone EID {BeaconId}, base64: {BeaconId.Base64Representation}, txPower: {TxPower}, RSSI: {RSSI}";
                 }
 
                 return $"BeaconType unknown {BeaconId}, txPower: {TxPower}, RSSI: {RSSI}";
