@@ -10,33 +10,36 @@ namespace Xamarin.iOS.EddystoneScanner
 {
     public class BeaconScanner : NSObject
     {
+        private static readonly NSString Identifier = new NSString("eddystoneBeaconScanner");
+
         public interface BeaconScannerDelegate
         {
             void DidFindBeacon(BeaconScanner beaconScanner, BeaconInfo beaconInfo);
             void DidLoseBeacon(BeaconScanner beaconScanner, BeaconInfo beaconInfo);
             void DidUpdateBeacon(BeaconScanner beaconScanner, BeaconInfo beaconInfo);
-            void DidObserveURLBeacon(BeaconScanner beaconScanner, NSUrl url, int RSSI);
+            void DidObserveUrlBeacon(BeaconScanner beaconScanner, NSUrl url, int RSSI);
         }
 
         public BeaconScannerDelegate ScannerDelegate { get; set; }
 
-        CentralManagerDelegate managerDelegate;
-        CBCentralManager centralManager;
-        DispatchQueue beaconOperationsQueue = new DispatchQueue("beacon_dispatch_queue");
-        bool shouldBeScanning = false;
+        private CentralManagerDelegate managerDelegate;
+        private readonly CBCentralManager centralManager;
+        private readonly DispatchQueue beaconOperationsQueue = new DispatchQueue("beacon_dispatch_queue");
+        private bool shouldBeScanning = false;
 
         public BeaconScanner()
         {
             Init();
 
             managerDelegate = new CentralManagerDelegate(this);
-            centralManager = new CBCentralManager(managerDelegate, beaconOperationsQueue);
+            NSDictionary options = NSDictionary.FromObjectAndKey(CBCentralManager.OptionRestoreIdentifierKey, Identifier);
+            centralManager = new CBCentralManager(managerDelegate, beaconOperationsQueue, options);
             centralManager.Delegate = managerDelegate;
         }
 
         public void StartScanning()
         {
-            beaconOperationsQueue.DispatchAsync(() => StartScanningSyncronized());
+            beaconOperationsQueue.DispatchAsync(StartScanningSyncronized);
         }
 
         public void StopScanning()
@@ -44,7 +47,7 @@ namespace Xamarin.iOS.EddystoneScanner
             centralManager.StopScan();
         }
 
-        void StartScanningSyncronized()
+        private void StartScanningSyncronized()
         {
             if (centralManager.State != CBCentralManagerState.PoweredOn)
             {
@@ -62,10 +65,10 @@ namespace Xamarin.iOS.EddystoneScanner
 
         private class CentralManagerDelegate : CBCentralManagerDelegate
         {
-            BeaconScanner beaconScanner;
-            Dictionary<string, Dictionary<string, object>> seenEddystoneCache = new Dictionary<string, Dictionary<string, object>>();
-            Dictionary<NSUuid, NSData> deviceIDCache = new Dictionary<NSUuid, NSData>();
-            private long onLostTimout = 15;
+            private BeaconScanner beaconScanner;
+            private Dictionary<string, Dictionary<string, object>> seenEddystoneCache = new Dictionary<string, Dictionary<string, object>>();
+            private Dictionary<NSUuid, NSData> deviceIDCache = new Dictionary<NSUuid, NSData>();
+            private readonly long onLostTimout = 15;
 
             public CentralManagerDelegate(BeaconScanner beaconScanner)
             {
@@ -78,6 +81,11 @@ namespace Xamarin.iOS.EddystoneScanner
                 {
                     beaconScanner.StartScanningSyncronized();
                 }
+            }
+
+            public override void WillRestoreState(CBCentralManager central, NSDictionary dict)
+            {
+                base.WillRestoreState(central, dict);
             }
 
             ///
@@ -190,7 +198,7 @@ namespace Xamarin.iOS.EddystoneScanner
                             var url = Eddystone.ParseURLFromFrame(beaconServiceData);
                             if (url != null)
                             {
-                                this.beaconScanner.ScannerDelegate?.DidObserveURLBeacon(beaconScanner, url, _RSSI);
+                                this.beaconScanner.ScannerDelegate?.DidObserveUrlBeacon(beaconScanner, url, _RSSI);
                             }
                         }
                     }

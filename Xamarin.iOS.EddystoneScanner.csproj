@@ -56,5 +56,8 @@
     <Compile Include="DispatchTimer.cs" />
     <Compile Include="Eddystone.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Entitlements.plist" />
+  </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
 </Project>
